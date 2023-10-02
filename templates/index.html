@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Data</title>
+</head>
+<body>
+    <h1>Send Data to Receiver</h1>
+    <button id="send-button">Send Data</button>
+
+    <script>
+        // Function to send data to the receiver when the button is clicked
+        document.getElementById('send-button').addEventListener('click', function () {
+            fetch('/temperature', { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Data sent to receiver:', data);
+                })
+                .catch(error => {
+                    console.error('Error sending data:', error);
+                });
+        });
+    </script>
+</body>
+</html>
