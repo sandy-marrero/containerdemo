@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Send Data</title>
+    <title>Embedded System</title>
 </head>
 <body>
-    <h1>Send Data to Receiver</h1>
-    <button id="send-button">Send Data</button>
+    <h1>ICOM Demo</h1>
 
+    <!-- Display received data -->
+    <h2>Received Data</h2>
+    <ul>
+        {% for entry in data %}
+            <li>{{ entry['timestamp'] }} - Temperature: {{ entry['temperature_C'] }}°C / {{ entry['temperature_F'] }}°F, Humidity: {{ entry['humidity'] }}%</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Send Data button -->
+    <h2>Send Data</h2>
+    <form method="post" action="/send-data">
+        <button type="submit">Send Data</button>
+    </form>
+
+    <!-- Refresh the page every 10 seconds to update received data -->
     <script>
-        // Function to send data to the receiver when the button is clicked
-        document.getElementById('send-button').addEventListener('click', function () {
-            fetch('/temperature', { method: 'GET' })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Data sent to receiver:', data);
-                })
-                .catch(error => {
-                    console.error('Error sending data:', error);
-                });
-        });
+        setInterval(function() {
+            location.reload();
+        }, 10000);
     </script>
 </body>
 </html>
