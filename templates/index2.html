@@ -1,43 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Temperature Data</title>
+    <title>Received Data</title>
 </head>
 <body>
-    <h1>Temperature Data</h1>
-    <ul id="data-list">
+    <h1>Received Data</h1>
+    <ul>
         {% for entry in data %}
             <li>{{ entry['timestamp'] }} - Temperature: {{ entry['temperature_C'] }}°C / {{ entry['temperature_F'] }}°F, Humidity: {{ entry['humidity'] }}%</li>
         {% endfor %}
     </ul>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-
-        function updateData(data) {
-            const dataList = document.getElementById('data-list');
-            dataList.innerHTML = ''; 
-
-            for (const entry of data) {
-                const listItem = document.createElement('li');
-                listItem.innerText = `${entry['timestamp']} - Temperature: ${entry['temperature_C']}°C / ${entry['temperature_F']}°F, Humidity: ${entry['humidity']}%`;
-                dataList.appendChild(listItem);
-            }
-        }
-
-        function fetchDataAndUpdate() {
-            fetch('/get-data')
-                .then(response => response.json())
-                .then(data => {
-                    updateData(data);
-                    setTimeout(fetchDataAndUpdate, 5000); 
-                })
-                .catch(error => {
-                    console.error('Error fetching data:', error);
-                    setTimeout(fetchDataAndUpdate, 5000); 
-                });
-        }
-
-        window.onload = fetchDataAndUpdate;
+        // Function to refresh the page every 5 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 5000);
     </script>
 </body>
 </html>
+

@@ -1,12 +1,13 @@
 from flask import Flask, jsonify
 import Adafruit_DHT
-import datetime
+import requests  # Import the requests library
 
 app = Flask(__name__)
 
+# Sensor configuration
 sensor = Adafruit_DHT.DHT11
 pin = 4
-data_list = []
+receiver_url = "http://172.17.0.1:5000/store-data"  # Replace with the IP of the receiver Raspberry Pi
 
 
 @app.route("/temperature", methods=["GET"])
@@ -14,26 +15,26 @@ def get_temperature():
     humidity, celsius_temperature = Adafruit_DHT.read_retry(sensor, pin)
 
     if humidity is not None and celsius_temperature is not None:
+        # Convert temperature to Fahrenheit
         fahrenheit_temperature = (celsius_temperature * 9 / 5) + 32
 
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        data_point = {
-            "timestamp": timestamp,
+        data = {
             "temperature_C": celsius_temperature,
             "temperature_F": fahrenheit_temperature,
             "humidity": humidity,
         }
 
-        data_list.append(data_point)
-
-        return jsonify(data_point), 200
+        # Send the data to the receiver Raspberry Pi
+        try:
+            response = requests.post(receiver_url, json=data)
+            if response.status_code == 200:
+                return jsonify(data), 200
+            else:
+                return "Failed to send data to the receiver Raspberry Pi.", 500
+        except Exception as e:
+            return f"Error sending data: {str(e)}", 500
     else:
         return "Failed to read sensor data.", 500
-
-
-@app.route("/get-data", methods=["GET"])
-def get_data():
-    return jsonify(data_list)
 
 
 if __name__ == "__main__":
