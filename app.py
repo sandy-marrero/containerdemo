@@ -92,5 +92,21 @@ def send_data_manually():
         return f"Error reading and sending data: {str(e)}", 500
 
 
+@app.route("/store-data", methods=["POST"])
+def store_data():
+    try:
+        data = request.json
+        data["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        received_data.append(data)  # Add the received data to the list
+
+        # Reset the list when it reaches 10 entries
+        if len(received_data) >= 10:
+            received_data.clear()
+
+        return "Data received and stored successfully.", 200
+    except Exception as e:
+        return f"Error processing and storing data: {str(e)}", 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
