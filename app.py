@@ -3,6 +3,7 @@ import Adafruit_DHT
 import requests
 import time
 import threading
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -56,7 +57,14 @@ data_thread.start()
 
 @app.route("/")
 def index():
-    return render_template("index.html", data=received_data)
+    global received_data_df  # Access the DataFrame in the outer scope
+
+    # Render the DataFrame as an HTML table
+    data_html = received_data_df.to_html(
+        classes="table table-bordered table-striped", escape=False, index=False
+    )
+
+    return render_template("index.html", data_html=data_html)
 
 
 @app.route("/send-data", methods=["POST"])
@@ -96,12 +104,24 @@ def send_data_manually():
 def store_data():
     try:
         data = request.json
-        data["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
-        received_data.append(data)  # Add the received data to the list
+        data["Timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        data["Origin"] = "Sender"  # Add an "Origin" attribute
 
-        # Reset the list when it reaches 10 entries
-        if len(received_data) >= 10:
-            received_data.clear()
+        # Add the received data to the DataFrame
+        global received_data_df
+        received_data_df = received_data_df.append(data, ignore_index=True)
+
+        # Reset the DataFrame when it reaches a certain size (e.g., 10 rows)
+        if len(received_data_df) >= 10:
+            received_data_df = pd.DataFrame(
+                columns=[
+                    "Timestamp",
+                    "Temperature (C)",
+                    "Temperature (F)",
+                    "Humidity",
+                    "Origin",
+                ]
+            )
 
         return "Data received and stored successfully.", 200
     except Exception as e:

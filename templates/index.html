@@ -4,15 +4,13 @@
     <title>Embedded System</title>
 </head>
 <body>
-    <h1>ICOM Demo</h1>
+    <h1>Raspi Demo</h1>
 
-    <!-- Display received data -->
+    <!-- Display received data as an HTML table -->
     <h2>Received Data</h2>
-    <ul>
-        {% for entry in data %}
-            <li>{{ entry['timestamp'] }} - Temperature: {{ entry['temperature_C'] }}°C / {{ entry['temperature_F'] }}°F, Humidity: {{ entry['humidity'] }}%</li>
-        {% endfor %}
-    </ul>
+    <div class="table-responsive">
+        {{ data_html | safe }}
+    </div>
 
     <!-- Send Data button -->
     <h2>Send Data</h2>
