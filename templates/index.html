@@ -1,24 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Embedded System</title>
+    <title>Raspberry Pi Demo</title>
 </head>
 <body>
-    <h1>Raspi Demo</h1>
+    <h1>Raspberry Pi Demo</h1>
 
-    <!-- Display received data as an HTML table -->
     <h2>Received Data</h2>
     <div class="table-responsive">
         {{ data_html | safe }}
     </div>
 
-    <!-- Send Data button -->
     <h2>Send Data</h2>
     <form method="post" action="/send-data">
         <button type="submit">Send Data</button>
     </form>
 
-    <!-- Refresh the page every 10 seconds to update received data -->
     <script>
         setInterval(function() {
             location.reload();

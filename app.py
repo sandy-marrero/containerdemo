@@ -1,65 +1,67 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, render_template, request
 import Adafruit_DHT
 import requests
 import time
-import threading
 import pandas as pd
 
 app = Flask(__name__)
 
-# Sensor configuration
 sensor = Adafruit_DHT.DHT11
 pin = 4
-receiver_url = "http://receiver-pi-ip:5000/store-data"  # Replace with the IP of the receiver Raspberry Pi
 
-# Create an empty list to store received data
-received_data = []
+received_data_df = pd.DataFrame(
+    columns=["Timestamp", "Temperature (C)", "Temperature (F)", "Humidity", "Origin"]
+)
+# Receiver Raspberry Pi URL
+# RPI1:169.254.204.19:5000 (White and Red case)
+# RPI2:169.254.79.226:5000 (Black Case)
+receiver_url = "http://169.254.204.19:5000"
+
+send_data_flag = True
 
 
 def read_and_send_data():
+    global send_data_flag
+
     while True:
         try:
-            humidity, celsius_temperature = Adafruit_DHT.read_retry(sensor, pin)
+            if send_data_flag:
+                humidity, celsius_temperature = Adafruit_DHT.read_retry(sensor, pin)
 
-            if humidity is not None and celsius_temperature is not None:
-                # Convert temperature to Fahrenheit
-                fahrenheit_temperature = (celsius_temperature * 9 / 5) + 32
+                if humidity is not None and celsius_temperature is not None:
+                    fahrenheit_temperature = (celsius_temperature * 9 / 5) + 32
 
-                data = {
-                    "temperature_C": celsius_temperature,
-                    "temperature_F": fahrenheit_temperature,
-                    "humidity": humidity,
-                }
+                    data = {
+                        "temperature_C": celsius_temperature,
+                        "temperature_F": fahrenheit_temperature,
+                        "humidity": humidity,
+                        "origin": "Raspberry Pi 1",
+                    }
 
-                # Send the data to the receiver Raspberry Pi
-                try:
-                    response = requests.post(receiver_url + "/store-data", json=data)
-                    if response.status_code == 200:
-                        print("Data sent to receiver:", data)
-                    else:
-                        print("Failed to send data to the receiver Raspberry Pi.")
-                except Exception as e:
-                    print(f"Error sending data: {str(e)}")
+                    try:
+                        response = requests.post(
+                            receiver_url + "/store-data", json=data
+                        )
+                        if response.status_code == 200:
+                            print("Data sent to the other Raspberry Pi:", data)
+                        else:
+                            print("Failed to send data to the other Raspberry Pi.")
+                    except Exception as e:
+                        print(f"Error sending data: {str(e)}")
 
-                # Add the data to the received_data list
-                received_data.append(data)
+                    received_data_df = received_data_df.append(data, ignore_index=True)
 
-            time.sleep(10)  # Read and send data every 10 seconds
+                send_data_flag = False
+
+            time.sleep(10)
         except Exception as e:
             print(f"Error reading and sending data: {str(e)}")
 
 
-# Start a background thread to continuously read and send data
-data_thread = threading.Thread(target=read_and_send_data)
-data_thread.daemon = True
-data_thread.start()
-
-
 @app.route("/")
 def index():
-    global received_data_df  # Access the DataFrame in the outer scope
+    global received_data_df
 
-    # Render the DataFrame as an HTML table
     data_html = received_data_df.to_html(
         classes="table table-bordered table-striped", escape=False, index=False
     )
@@ -69,33 +71,36 @@ def index():
 
 @app.route("/send-data", methods=["POST"])
 def send_data_manually():
+    global send_data_flag
+
     try:
-        humidity, celsius_temperature = Adafruit_DHT.read_retry(sensor, pin)
+        if send_data_flag:
+            humidity, celsius_temperature = Adafruit_DHT.read_retry(sensor, pin)
 
-        if humidity is not None and celsius_temperature is not None:
-            # Convert temperature to Fahrenheit
-            fahrenheit_temperature = (celsius_temperature * 9 / 5) + 32
+            if humidity is not None and celsius_temperature is not None:
+                fahrenheit_temperature = (celsius_temperature * 9 / 5) + 32
 
-            data = {
-                "temperature_C": celsius_temperature,
-                "temperature_F": fahrenheit_temperature,
-                "humidity": humidity,
-            }
+                data = {
+                    "temperature_C": celsius_temperature,
+                    "temperature_F": fahrenheit_temperature,
+                    "humidity": humidity,
+                    "origin": "Raspberry Pi 1",
+                }
 
-            # Send the data to the receiver Raspberry Pi
-            try:
-                response = requests.post(receiver_url + "/store-data", json=data)
-                if response.status_code == 200:
-                    print("Data sent to receiver:", data)
-                else:
-                    print("Failed to send data to the receiver Raspberry Pi.")
-            except Exception as e:
-                print(f"Error sending data: {str(e)}")
+                try:
+                    response = requests.post(receiver_url + "/store-data", json=data)
+                    if response.status_code == 200:
+                        print("Data sent to the other Raspberry Pi:", data)
+                    else:
+                        print("Failed to send data to the other Raspberry Pi.")
+                except Exception as e:
+                    print(f"Error sending data: {str(e)}")
 
-            # Add the data to the received_data list
-            received_data.append(data)
+                received_data_df = received_data_df.append(data, ignore_index=True)
 
-        return "Data sent to the receiver Raspberry Pi.", 200
+            send_data_flag = False
+
+        return "Data sent to the other Raspberry Pi.", 200
     except Exception as e:
         return f"Error reading and sending data: {str(e)}", 500
 
@@ -105,13 +110,10 @@ def store_data():
     try:
         data = request.json
         data["Timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
-        data["Origin"] = "Sender"  # Add an "Origin" attribute
 
-        # Add the received data to the DataFrame
         global received_data_df
         received_data_df = received_data_df.append(data, ignore_index=True)
 
-        # Reset the DataFrame when it reaches a certain size (e.g., 10 rows)
         if len(received_data_df) >= 10:
             received_data_df = pd.DataFrame(
                 columns=[
@@ -129,4 +131,4 @@ def store_data():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
