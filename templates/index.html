@@ -2,25 +2,58 @@
 <html>
 <head>
     <title>Embedded System</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
 </head>
 <body>
-    <h1>ICOM Demo</h1>
+    <h1> Raspi Test</h1>
 
-    <!-- Display received data -->
     <h2>Received Data</h2>
-    <ul>
-        {% for entry in data %}
-            <li>{{ entry['timestamp'] }} - Temperature: {{ entry['temperature_C'] }}°C / {{ entry['temperature_F'] }}°F, Humidity: {{ entry['humidity'] }}%</li>
-        {% endfor %}
-    </ul>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Temperature (C)</th>
+                    <th>Temperature (F)</th>
+                    <th>Humidity</th>
+                    <th>Origin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr>
+                        <td>{{ row['timestamp'] }}</td>
+                        <td>{{ row['temperature_C'] }} &deg;C</td>
+                        <td>{{ row['temperature_F'] }} &deg;F</td>
+                        <td>{{ row['humidity'] }}%</td>
+                        <td>{{ row['origin'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <!-- Send Data button -->
     <h2>Send Data</h2>
     <form method="post" action="/send-data">
         <button type="submit">Send Data</button>
     </form>
 
-    <!-- Refresh the page every 10 seconds to update received data -->
     <script>
         setInterval(function() {
             location.reload();
